@@ -1,0 +1,215 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "    NLP group project - garys code"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "[nltk_data] Downloading package wordnet to\n",
+      "[nltk_data]     /Users/garygonzenbach/nltk_data...\n",
+      "[nltk_data]   Package wordnet is already up-to-date!\n",
+      "[nltk_data] Downloading package stopwords to\n",
+      "[nltk_data]     /Users/garygonzenbach/nltk_data...\n",
+      "[nltk_data]   Package stopwords is already up-to-date!\n"
+     ]
+    }
+   ],
+   "source": [
+    "import pandas as pd\n",
+    "from requests import get\n",
+    "from bs4 import BeautifulSoup\n",
+    "import os\n",
+    "from prepare import clean\n",
+    "import re"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Scrape the urls from the GitHub trending sites"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def get_GitHub_trend(url):\n",
+    "    url = 'https://github.com/trending'\n",
+    "    headers = {'User-Agent': 'Codeup Ada Data Science'} # codeup.com doesn't like our default user-agent\n",
+    "    response = get(url, headers=headers)\n",
+    "    soup = BeautifulSoup(response.content, 'html.parser')\n",
+    "    title = soup.title\n",
+    "    #  pull the GitHub Trending repositories\n",
+    "    trending = soup.find_all('div', class_= 'd-inline-block')\n",
+    "    #  find all the \"hrefs\", which are the trending titles\n",
+    "    re.findall(r'href=\"(.*?)\"', str(trending))\n",
+    "    return trending\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# . turn this off for now, until access limit is removed\n",
+    "#  trending = get_GitHub_trend('https://github.com/trending')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now scrape the urls from the GitHub sites with the most stars (decending order of stars)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# scrape GitHub repositories with the most stars\n",
+    "def get_GitHub_most_stars(url = 'https://github.com/search?o=desc&q=stars%3A%3E0&s=stars&type=Repositories'):\n",
+    "    headers = {'User-Agent': 'Codeup Ada Data Science'} \n",
+    "    response = get(url, headers=headers)\n",
+    "    contents = response.content\n",
+    "    return contents"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# read the html file from a file in the curent working directory ('GitHubTopStars_repos.html')\n",
+    "def read_GitHub_most_stars(filename):\n",
+    "    with open(filename) as f:\n",
+    "        contents = f.read()\n",
+    "    return contents"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def parse_urls():\n",
+    "    soup = BeautifulSoup(contents, 'html.parser')\n",
+    "    title = soup.title\n",
+    "    orig_text = soup.text\n",
+    "    stars = soup.find_all('a', class_= 'v-align-middle')\n",
+    "    #  find all the \"hrefs\", which are the trending titles\n",
+    "    return(re.findall(r'href=\"(.*?)\"', str(stars)))\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#  turn off the web access for now and just read the cached files from the working directory\n",
+    "#  contents = get_GitHub_most_stars()\n",
+    "list_of_html_files = ['GitHubTopStars_repos-page1.html','GitHubTopStars_repos-page2.html',\\\n",
+    "                      'GitHubTopStars_repos-page3.html','GitHubTopStars_repos-page4.html',\\\n",
+    "                      'GitHubTopStars_repos-page5.html','GitHubTopStars_repos-page6.html',\\\n",
+    "                      'GitHubTopStars_repos-page7.html','GitHubTopStars_repos-page8.html',\\\n",
+    "                      'GitHubTopStars_repos-page9.html','GitHubTopStars_repos-page10.html',\\\n",
+    "                      'GitHubTopStars_repos-page11.html','GitHubTopStars_repos-page12.html',\\\n",
+    "                      'GitHubTopStars_repos-page13.html']\n",
+    "\n",
+    "star_list = []\n",
+    "for html_file in list_of_html_files:\n",
+    "    read_GitHub_most_stars(html_file)\n",
+    "    next_list = parse_urls()\n",
+    "    star_list = star_list + next_list\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "list"
+      ]
+     },
+     "execution_count": 40,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "type(star_list)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "130"
+      ]
+     },
+     "execution_count": 42,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "len(star_list)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
